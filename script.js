@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  Papa.parse("data.csv", {
+  Papa.parse("intesa.csv", {
     download: true,
     header: true,
     complete: function(results) {
