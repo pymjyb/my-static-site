@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>By Institution</title>
-
+  <title>Institutions - Data Analytics Dashboard</title>
+  <meta name="description" content="Explore institutional data with advanced filtering and search capabilities">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <!-- PicoCSS -->
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
@@ -13,52 +19,253 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-
-  <!-- Navbar -->
+  <!-- Navigation -->
   <header class="container-fluid">
     <nav>
-      <a href="index.html">My Website</a>
+      <a href="index.html" class="brand">
+        <span class="brand-icon">📊</span>
+        <span class="brand-text">Data Analytics</span>
+      </a>
       <ul>
-        <li><a href="by-institution.html">By Institution</a></li>
-        <li><a href="by-country.html">By Country</a></li>
+        <li><a href="by-institution.html" class="nav-link active">Institutions</a></li>
+        <li><a href="by-country.html" class="nav-link">Countries</a></li>
       </ul>
     </nav>
   </header>
 
   <main class="container">
-    <h1>Institutions</h1>
-    <div id="list-container">Loading institutions...</div>
+    <!-- Page Header -->
+    <section class="page-header fade-in-up">
+      <div class="card">
+        <div class="card-header">
+          <h1>Institutional Data</h1>
+          <div class="header-actions">
+            <span class="data-count" id="institution-count">Loading...</span>
+          </div>
+        </div>
+        <p class="page-description">
+          Comprehensive database of institutions with advanced search and filtering capabilities. 
+          Use the search box below to find specific institutions or browse the complete list.
+        </p>
+      </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section fade-in-up">
+      <div class="card">
+        <div class="search-container">
+          <div class="search-box-wrapper">
+            <input type="text" id="searchBox" placeholder="Search institutions..." class="search-input">
+            <div class="search-icon">🔍</div>
+          </div>
+          <div class="search-stats">
+            <span id="search-results">All institutions</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Section -->
+    <section class="data-section fade-in-up">
+      <div class="card">
+        <div class="card-header">
+          <h2>Institution Directory</h2>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="exportData()">Export Data</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <div id="list-container" class="loading">
+            <div class="spinner"></div>
+            <p>Loading institutions...</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Data Analytics Dashboard</h4>
+          <p>Professional data visualization and analysis platform.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="by-institution.html">Institutions</a></li>
+            <li><a href="by-country.html">Countries</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Features</h4>
+          <ul>
+            <li>Advanced Search</li>
+            <li>Data Export</li>
+            <li>Real-time Updates</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Data Analytics Dashboard. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
   <script>
-    Papa.parse("institutions-15.csv", {
-      download: true,
-      header: false,
-      skipEmptyLines: true,
-      complete: function(results) {
-        const data = results.data;
-        const container = document.getElementById("list-container");
+    let allInstitutions = [];
+    let filteredInstitutions = [];
 
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No institutions found.</p>";
-          return;
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("list-container");
+      const searchBox = document.getElementById("searchBox");
+      const institutionCount = document.getElementById("institution-count");
+      const searchResults = document.getElementById("search-results");
+
+      // Show loading state
+      container.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading institutions...</p>
+        </div>
+      `;
+
+      Papa.parse("institutions-15.csv", {
+        download: true,
+        header: false,
+        skipEmptyLines: true,
+        complete: function(results) {
+          allInstitutions = results.data.map(row => row[0]).filter(name => name && name.trim());
+          filteredInstitutions = [...allInstitutions];
+          
+          updateInstitutionCount();
+          renderInstitutions();
+          
+          // Search functionality
+          searchBox.addEventListener("input", (e) => {
+            const filter = e.target.value.toLowerCase().trim();
+            if (filter === '') {
+              filteredInstitutions = [...allInstitutions];
+            } else {
+              filteredInstitutions = allInstitutions.filter(name => 
+                name.toLowerCase().includes(filter)
+              );
+            }
+            updateSearchResults();
+            renderInstitutions();
+          });
+        },
+        error: function(err) {
+          container.innerHTML = `
+            <div class="error">
+              <h3>⚠️ Error Loading Data</h3>
+              <p>Unable to load institutions data: ${err.message}</p>
+              <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+            </div>
+          `;
         }
-
-        const ul = document.createElement("ul");
-        data.forEach(row => {
-          const li = document.createElement("li");
-          li.textContent = row[0]; // CSV has one column
-          ul.appendChild(li);
-        });
-
-        container.innerHTML = "";
-        container.appendChild(ul);
-      },
-      error: function(err) {
-        document.getElementById("list-container").innerHTML = `<p style="color:red;">Error loading CSV: ${err.message}</p>`;
-      }
+      });
     });
-  </script>
 
+    function updateInstitutionCount() {
+      document.getElementById('institution-count').textContent = `${allInstitutions.length} institutions`;
+    }
+
+    function updateSearchResults() {
+      const searchBox = document.getElementById('searchBox');
+      const searchResults = document.getElementById('search-results');
+      
+      if (searchBox.value.trim() === '') {
+        searchResults.textContent = 'All institutions';
+      } else {
+        searchResults.textContent = `${filteredInstitutions.length} of ${allInstitutions.length} institutions`;
+      }
+    }
+
+    function renderInstitutions() {
+      const container = document.getElementById("list-container");
+      
+      if (!filteredInstitutions || filteredInstitutions.length === 0) {
+        container.innerHTML = `
+          <div class="no-results">
+            <div class="no-results-icon">🔍</div>
+            <h3>No institutions found</h3>
+            <p>Try adjusting your search criteria or browse all institutions.</p>
+            <button class="btn btn-primary" onclick="clearSearch()">Clear Search</button>
+          </div>
+        `;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      ul.className = "institution-list";
+      
+      filteredInstitutions.forEach((institution, index) => {
+        const li = document.createElement("li");
+        li.className = "institution-item";
+        li.innerHTML = `
+          <div class="institution-content">
+            <div class="institution-name">${institution}</div>
+            <div class="institution-actions">
+              <button class="btn-action" onclick="viewDetails('${institution}')" title="View Details">
+                👁️
+              </button>
+              <button class="btn-action" onclick="copyInstitution('${institution}')" title="Copy">
+                📋
+              </button>
+            </div>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      container.innerHTML = '';
+      container.appendChild(ul);
+    }
+
+    function clearSearch() {
+      document.getElementById('searchBox').value = '';
+      filteredInstitutions = [...allInstitutions];
+      updateSearchResults();
+      renderInstitutions();
+    }
+
+    function viewDetails(institution) {
+      alert(`Institution Details:\n\n${institution}\n\nAdditional details would be displayed here in a real application.`);
+    }
+
+    function copyInstitution(institution) {
+      navigator.clipboard.writeText(institution).then(() => {
+        // Show temporary feedback
+        const button = event.target;
+        const originalContent = button.innerHTML;
+        button.innerHTML = '✅';
+        button.style.background = 'var(--success-color)';
+        
+        setTimeout(() => {
+          button.innerHTML = originalContent;
+          button.style.background = '';
+        }, 1000);
+      }).catch(() => {
+        alert('Failed to copy to clipboard');
+      });
+    }
+
+    function exportData() {
+      const dataToExport = filteredInstitutions.length > 0 ? filteredInstitutions : allInstitutions;
+      const csvContent = dataToExport.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `institutions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>
