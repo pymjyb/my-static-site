@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>By Institution</title>
+
+  <!-- PicoCSS -->
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="container-fluid">
+    <nav>
+      <a href="index.html">My Website</a>
+      <ul>
+        <li><a href="by-institution.html">By Institution</a></li>
+        <li><a href="by-country.html">By Country</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Institutions</h1>
+    <div id="list-container">Loading institutions...</div>
+  </main>
+
+  <script>
+    Papa.parse("institutions-15.csv", {
+      download: true,
+      header: false,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const data = results.data;
+        const container = document.getElementById("list-container");
+
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No institutions found.</p>";
+          return;
+        }
+
+        const ul = document.createElement("ul");
+        data.forEach(row => {
+          const li = document.createElement("li");
+          li.textContent = row[0]; // CSV has one column
+          ul.appendChild(li);
+        });
+
+        container.innerHTML = "";
+        container.appendChild(ul);
+      },
+      error: function(err) {
+        document.getElementById("list-container").innerHTML = `<p style="color:red;">Error loading CSV: ${err.message}</p>`;
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,30 +1,27 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Use the exact filename as it appears in the repo (case-sensitive on many hosts)
+  const container = document.getElementById("table-container");
+  const searchBox = document.getElementById("searchBox");
+
   Papa.parse("Intesa.csv", {
     download: true,
     header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true,
     complete: function(results) {
-      // Filter out fully-empty rows (PapaParse can return an empty trailing row)
-      let data = results.data || [];
-      data = data.filter(row => Object.values(row).some(v => v !== null && String(v).trim() !== ""));
-      const container = document.getElementById("table-container");
+      const data = results.data;
 
-      // Show parse errors if any
-      if (results.errors && results.errors.length) {
-        console.error('CSV parse errors:', results.errors);
-        container.innerHTML = `<p>Error parsing CSV: ${results.errors[0].message}</p>`;
-        return;
-      }
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         container.innerHTML = "<p>No data found.</p>";
         return;
       }
 
       const table = document.createElement("table");
+      table.classList.add("sortable"); // Tablesort requires class
+
       const thead = document.createElement("thead");
       const tbody = document.createElement("tbody");
 
-      // Header row
+      // Header
       const headers = Object.keys(data[0]);
       const headerRow = document.createElement("tr");
       headers.forEach(header => {
@@ -49,6 +46,22 @@ document.addEventListener("DOMContentLoaded", () => {
       table.appendChild(tbody);
       container.innerHTML = "";
       container.appendChild(table);
+
+      // Initialize sorting
+      new Tablesort(table);
+
+      // Filter functionality
+      searchBox.addEventListener("input", () => {
+        const filter = searchBox.value.toLowerCase();
+        Array.from(tbody.rows).forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(filter) ? "" : "none";
+        });
+      });
+    },
+    error: function(err) {
+      console.error("CSV parse error:", err);
+      container.innerHTML = `<p style="color:red;">Error loading CSV: ${err.message}</p>`;
     }
   });
 });
