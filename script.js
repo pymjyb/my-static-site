@@ -1,11 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
-  Papa.parse("intesa.csv", {
+  // Use the exact filename as it appears in the repo (case-sensitive on many hosts)
+  Papa.parse("Intesa.csv", {
     download: true,
     header: true,
     complete: function(results) {
-      const data = results.data;
+      // Filter out fully-empty rows (PapaParse can return an empty trailing row)
+      let data = results.data || [];
+      data = data.filter(row => Object.values(row).some(v => v !== null && String(v).trim() !== ""));
       const container = document.getElementById("table-container");
 
+      // Show parse errors if any
+      if (results.errors && results.errors.length) {
+        console.error('CSV parse errors:', results.errors);
+        container.innerHTML = `<p>Error parsing CSV: ${results.errors[0].message}</p>`;
+        return;
+      }
       if (data.length === 0) {
         container.innerHTML = "<p>No data found.</p>";
         return;
